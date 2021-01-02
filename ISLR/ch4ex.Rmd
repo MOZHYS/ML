@@ -1,0 +1,356 @@
+---
+title: "ISLR CHAPTER4 EXERCISES"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+##ISLR Chapter 4 Exercise
+##QUESTION 10
+#### a.
+```{r}
+library(ISLR)
+attach(Weekly)
+head(Weekly)
+summary(Weekly)
+cor(Weekly[,-9])
+pairs(Weekly)
+plot(Volume,col="blue")
+```
+   
+   
+   *Year and Volume are positively correlated. There is no correlations between lag variables and today variable.*
+
+
+####b.
+```{r}
+fit.glm <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly, family = binomial)
+summary(fit.glm)
+```
+*Lag2 has statistically significant predictive value with p-value less than 0.05.*
+
+####c.
+```{r}
+probs <- predict(fit.glm, type = "response")
+pred.glm <- rep("Down", length(probs))
+pred.glm[probs > 0.5] <- "Up"
+table(pred.glm, Direction)
+
+(54+557)/1089 # The percentage of correct predictions on the training data
+557/(48+557)  #When the market goes up, the model is right
+54/(54+430)   #When the market goes down, the model is right
+```
+*The model has higher accuracy when the market goes up.*
+
+*The percentage of correct predictions on the test data is 56.107%* 
+
+*The training error rate is 43.90%.*
+
+*When the market goes up, the model is right 92.07% of the time.  When the market goes down, the model is right 11.158% of the time.*
+
+####d.
+```{r}
+train <- (Year < 2009)
+Weekly.2009and2010 <- Weekly[!train, ]
+Direction.2009and2010 <- Direction[!train]
+fit.glm2 <- glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+summary(fit.glm2)
+
+probs2 <- predict(fit.glm2, Weekly.2009and2010, type = "response")
+pred.glm2 <- rep("Down", length(probs2))
+pred.glm2[probs2 > 0.5] <- "Up"
+table(pred.glm2, Direction.2009and2010)
+
+(9+56)/104 #The percentage of correct predictions on the test data
+56/(56+5)  #When the market goes up
+9/(9+34)   #When the market goes down
+
+
+```
+*The percentage of correct predictions on the test data is 62.5%.   * 
+
+*The test error rate is 37.5%.   *
+
+*When the market goes up, the model is right 91.8032787% of the time. * 
+
+*When the market goes down, the model is right 20.9302326% of the time.*
+
+
+
+####e.LDA
+```{r}
+library(MASS)
+library(class)
+fit.lda <- lda(Direction ~ Lag2, data = Weekly, subset = train)
+summary(fit.lda)
+fit.lda
+
+pred.lda <- predict(fit.lda, Weekly.2009and2010)
+table(pred.lda$class, Direction.2009and2010)
+
+
+
+```
+
+
+
+####f. QDA
+```{r}
+fit.qda <- qda(Direction ~ Lag2, data = Weekly, subset = train)
+summary(fit.qda)
+fit.qda
+
+pred.qda <- predict(fit.qda, Weekly.2009and2010)
+table(pred.qda$class, Direction.2009and2010)
+```
+
+*The percentage of correct predictions on the test data is 58.65%.*
+
+*The test error rate is 41.34%.   *
+
+*When the market goes up, the model is right 100% of the time.  *
+
+*When the market goes down, the model is right 0% of the time.*
+
+
+####g.
+```{r}
+train.X <- as.matrix(Lag2[train])
+test.X <- as.matrix(Lag2[!train])
+train.Direction <- Direction[train]
+set.seed(1)
+pred.knn <- knn(train.X, test.X, train.Direction, k = 1)
+table(pred.knn, Direction.2009and2010)
+```
+
+*The percentage of correct predictions on the test data is 50.0%.  *  
+
+*The test error rate is 50.0%.   *
+
+*When the market goes up, the model is right 50.8% of the time.  *
+
+*When the market goes down, the model is right 48.8% of the time.*
+
+####h.
+
+*Logistic regression and LDA have the minimum error rates, They gave the best results. *
+
+
+####i.
+  Logistic regression Lag2:Lag1
+```{r}
+fit.glm3 <- glm(Direction ~ Lag2:Lag1, data = Weekly, family = binomial, subset = train)
+probs3 <- predict(fit.glm3, Weekly.2009and2010, type = "response")
+pred.glm3 <- rep("Down", length(probs3))
+pred.glm3[probs3 > 0.5] = "Up"
+table(pred.glm3, Direction.2009and2010)
+mean(pred.glm3 == Direction.2009and2010)
+```
+
+######  LDA with Lag2 interaction with Lag1
+```{r}
+fit.lda2 <- lda(Direction ~ Lag2:Lag1, data = Weekly, subset = train)
+pred.lda2 <- predict(fit.lda2, Weekly.2009and2010)
+mean(pred.lda2$class == Direction.2009and2010)
+```
+
+######  QDA with sqrt(abs(Lag2))
+```{r}
+fit.qda2 <- qda(Direction ~ Lag2 + sqrt(abs(Lag2)), data = Weekly, subset = train)
+pred.qda2 <- predict(fit.qda2, Weekly.2009and2010)
+table(pred.qda2$class, Direction.2009and2010)
+mean(pred.qda2$class == Direction.2009and2010)
+```
+
+######  KNN k =10
+```{r}
+pred.knn2 <- knn(train.X, test.X, train.Direction, k = 10)
+table(pred.knn2, Direction.2009and2010)
+mean(pred.knn2 == Direction.2009and2010)
+```
+
+
+######  KNN k =20
+```{r}
+pred.knn4 <- knn(train.X, test.X, train.Direction, k = 20)
+table(pred.knn4, Direction.2009and2010)
+mean(pred.knn4 == Direction.2009and2010)
+```
+
+######  KNN k =50
+```{r}
+pred.knn5 <- knn(train.X, test.X, train.Direction, k = 50)
+table(pred.knn5, Direction.2009and2010)
+mean(pred.knn5 == Direction.2009and2010)
+```
+
+
+######   KNN k = 100
+```{r}
+pred.knn3 <- knn(train.X, test.X, train.Direction, k = 100)
+table(pred.knn3, Direction.2009and2010)
+mean(pred.knn3 == Direction.2009and2010)
+```
+
+*Original logistic regression and LDA have best performance regarding to test error rates. Higher k for KNN, produces better results when Lag2.*
+
+
+
+##QUESTION 11
+####a.
+```{r}
+attach(Auto)
+head(Auto)
+mpg01 <- rep(0, length(mpg))
+mpg01[mpg > median(mpg)] <- 1
+Auto <- data.frame(Auto, mpg01)
+
+data(Auto)
+mpg01 <- ifelse(Auto$mpg > median(Auto$mpg), 1, 0)
+df <- data.frame(Auto, mpg01)
+```
+
+
+####b.
+```{r}
+cor(df[, -9])
+pairs(df)
+require(ggplot2)
+require(ggthemes)
+ggplot(Auto, aes(x=horsepower , y=mpg))+geom_point()+theme_economist()
+ggplot(Auto, aes(x=horsepower , y=weight))+geom_point()+theme_economist()
+ggplot(Auto, aes(x=mpg , y=displacement))+geom_point()+theme_economist()
+
+
+
+
+boxplot(Auto$mpg , Auto$horsepower)
+boxplot(Auto$mpg , Auto$weight)
+boxplot(Auto$horsepower , Auto$weight)
+```
+
+*Variables horsepower,displacement, weight, mpg01 and acceleration seem to be highly correlated.*
+
+####c.
+```{r}
+train <- (year %% 2 == 0)
+Auto.train <- Auto[train, ]
+Auto.test <- Auto[!train, ]
+mpg01.test <- mpg01[!train]
+
+```
+
+####d.
+```{r}
+fit.lda <- lda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, subset = train)
+fit.lda
+pred.lda <- predict(fit.lda, Auto.test)
+table(pred.lda$class, mpg01.test)
+mean(pred.lda$class != mpg01.test)
+```
+*test error rate of 12.6373626%*
+
+####e.
+```{r}
+fit.qda <- qda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, subset = train)
+fit.qda
+pred.qda <- predict(fit.qda, Auto.test)
+table(pred.qda$class, mpg01.test)
+mean(pred.qda$class != mpg01.test)
+ 
+```
+*test error rate of 13.1868132%.*
+
+####f.
+```{r}
+fit.glm <- glm(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, family = binomial, subset = train)
+fit.glm
+probs <- predict(fit.glm, Auto.test, type = "response")
+pred.glm <- rep(0, length(probs))
+pred.glm[probs > 0.5] <- 1
+table(pred.glm, mpg01.test)
+mean(pred.glm != mpg01.test)
+```
+*test error rate of 12.0879121%.*
+
+####g.
+```{r}
+train.X <- cbind(cylinders, weight, displacement, horsepower)[train, ]
+test.X <- cbind(cylinders, weight, displacement, horsepower)[!train, ]
+train.mpg01 <- mpg01[train]
+set.seed(1)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 1)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 10)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 20)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 30)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 40)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 50)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+pred.knn <- knn(train.X, test.X, train.mpg01, k = 100)
+table(pred.knn, mpg01.test)
+mean(pred.knn != mpg01.test)
+
+
+```
+*test error rate of 15.3848462% for K=1.  *
+
+*test error rate of 16.4838352% for K=10. *
+
+*test error rate of 14.28571% for K=20.*
+
+*test error rate of 13.73626% for K=30.*
+
+*test error rate of 13.73626% for K=40.*
+
+*test error rate of 14.83516% for K=50.*
+
+*test error rate of 14.28571% for K=100. *
+
+*KNN performs best around k=30 and k=40.*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
